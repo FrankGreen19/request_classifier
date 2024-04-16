@@ -1,37 +1,31 @@
-import os
+from flask import Flask, request, render_template
+from flask_cors import CORS
 
-os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+import command
+from services import class_service
 
-import tensorflow as tf
-import logging
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'SDKFJSDFOWEIOF'
 
-tf.get_logger().setLevel(logging.ERROR)
+cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-import sys
-import keras
-import request_preparator
-from classes import classes_dict
 
-request = None
-try:
-    request = sys.argv[1]
-except IndexError:
-    print('Не передан запрос')
-    sys.exit(1)
+@app.route('/', methods=["GET", "POST"])
+def home():
+    return render_template('room.html')
 
-sequence = request_preparator.get_sequence(request)
-if sequence is []:
-    print('Не удалось построить последовательность')
-    sys.exit(1)
 
-lstm_model = keras.models.load_model('files/classifier_model_lstm.h5')
-predictions = lstm_model.predict(x=sequence, verbose=0)[0]
+@app.route('/api/message', methods=["POST"])
+def message():
+    try:
+        prediction_class = command.get_prediction(request.form["message"])
+    except:
+        prediction_class = None
 
-result = None
-for idx, prediction in enumerate(predictions):
-    if prediction >= 0.7:
-        result = classes_dict[idx]
-        break
+    result = None
+    if prediction_class is None:
+        result = 'Не удалось распознать Ваш запрос. Пожалуйста, перефразируйте и попробуйте еще раз'
+    else:
+        result = class_service.classes_data[prediction_class]
 
-print(result)
+    return result

@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+{% block content %}
+<div id="app">
+    <div class="container py-5 px-4">
+      <!-- For demo purpose-->
+      <header class="text-center">
+        <h1 class="display-4 text-white">Bootstrap Chat</h1>
+      </header>
+
+      <div class="row rounded-lg overflow-hidden shadow">
+        <!-- Chat Box-->
+        <div class="col-12 px-0">
+          <div class="px-4 py-5 chat-box bg-white">
+            <!-- Sender Message-->
+            <div class="media w-50 mb-3">
+              <img src="https://bootstrapious.com/i/snippets/sn-chat/avatar.svg"
+                   alt="user"
+                   width="50"
+                   class="rounded-circle">
+              <div class="media-body ml-3">
+                <div class="rounded py-2 px-3 mb-2" style="background: #e8e8e8">
+                  <p class="text-small mb-0 text-muted">Здравстуйте! Чем я могу Вам почочь?</p>
+                </div>
+                <p class="small text-muted">12:00 PM | Aug 13</p>
+              </div>
+            </div>
+
+            <div v-for="message in messages">
+              <div class="media w-50 mb-3" v-if="message.type === 'simple_answer'">
+                <img src="https://bootstrapious.com/i/snippets/sn-chat/avatar.svg"
+                     alt="user"
+                     width="50"
+                     class="rounded-circle">
+                <div class="media-body ml-3">
+                  <div class="rounded py-2 px-3 mb-2" style="background: #e8e8e8">
+                    <p class="text-small mb-0 text-muted" v-text="message.content"></p>
+                  </div>
+                  <p class="small text-muted">12:00 PM | Aug 13</p>
+                </div>
+              </div>
+              
+               <div class="media w-25 ml-auto mb-3" v-if="message.type === 'client'">
+                    <div class="media-body">
+                      <div class="bg-primary rounded py-2 px-3 mb-2">
+                        <p class="text-small mb-0 text-white" v-text="message.content"></p>
+                      </div>
+                      <p class="small text-muted">12:00 PM | Aug 13</p>
+                    </div>
+               </div>
+              
+               <div class="media w-50 mb-3" v-if="message.type === 'links'">
+                 <img src="https://bootstrapious.com/i/snippets/sn-chat/avatar.svg"
+                  alt="user"
+                  width="50"
+                  class="rounded-circle">
+                 <div class="media-body ml-3">
+                   <div class="rounded py-2 px-3 mb-2" style="background: #e8e8e8">
+                     <p class="text-small mb-1 text-muted">Вот что мне удалось найти:</p>
+                     <div class="rounded py-1 px-2 mb-1" style="background: #cecaca" v-for="link in message.content.links">
+                        <a class="text-muted" :href="link.url" v-text="link.title" style="text-decoration: none;"></a>
+                     </div>
+
+                     <div v-if="message.content.scenario_activation_question">
+                       <h3 class="text-small mt-3 text-muted"
+                        v-text="message.content.scenario_activation_question"></h3>
+
+                       <div class="row">
+                         <div class="col-6">
+                           <button class="btn btn-sm btn-primary w-50"
+                                   @click.prevent="playScenario(message.content.scenario_steps)"
+                                   :disabled="scenarioMode === true"
+                           >
+                             Да
+                           </button>
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+                   <p class="small text-muted">12:00 PM | Aug 13</p>
+                 </div>
+               </div>
+
+              <div class="media w-50 mb-3" v-if="message.type === 'buttons'">
+                 <img src="https://bootstrapious.com/i/snippets/sn-chat/avatar.svg"
+                  alt="user"
+                  width="50"
+                  class="rounded-circle">
+                 <div class="media-body ml-3">
+                   <div class="rounded py-2 px-3 mb-2" style="background: #e8e8e8">
+                     <p class="text-small mb-1 text-muted" v-text="message.content.question"></p>
+                     <div class="rounded py-1 px-2 mb-1" style="background: #cecaca" v-for="possible_answer in message.content.possible_answers">
+                       <a class="text-muted" v-text="possible_answer" href="#" style="text-decoration: none;" @click="handleScenarioButton(possible_answer)"></a>
+                     </div>
+                   </div>
+                   <p class="small text-muted">12:00 PM | Aug 13</p>
+                 </div>
+               </div>
+              
+            </div>
+          </div>
+
+          <!-- Typing area -->
+          <form action="#" class="bg-light">
+            <div class="input-group">
+              <input type="text" placeholder="Напишите сообщение..." aria-describedby="button-addon2"
+                     v-model="message"
+                     class="form-control rounded-0 border-0 py-4 bg-light">
+              <div class="input-group-append">
+                <button id="button-addon2" type="submit" class="btn btn-link" v-if="scenarioMode === false"
+                        @click.prevent="sendMessage"
+                        :disabled="sendButtonDisabled">
+                  <i class="fa fa-paper-plane"></i>
+                </button>
+                <button id="button-addon3" type="submit" class="btn btn-link" v-if="scenarioMode === true"
+                        @click.prevent="handleScenarioStep"
+                        :disabled="sendButtonDisabled">
+                  <i class="fa fa-paper-plane"></i>
+                </button>
+              </div>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </div>
+</div>
+
+<script>
+    Vue.createApp({
+        data() {
+            return {
+                message: '',
+                messages: [],
+                scenarioSteps: [],
+                scenarioMode: false,
+                scenarioStep: null,
+                scenarioAnswers: [],
+                messageHandler: 'sendMessage'
+            };
+        },
+
+        computed: {
+          sendButtonDisabled() {
+            return this.message.length === 0;
+          }
+        },
+
+        methods: {
+          sendMessage() {
+            this.pushSimpleMessage(this.message)
+
+            const url = 'http://127.0.0.1:5000/api/message';
+            const form = new FormData();
+            form.append('message', this.message);
+
+            axios.post(url, form)
+                .then(response => {
+                    this.pushBigAnswerMessage(response.data)
+                })
+                .catch(error => {
+                    console.error('Произошла ошибка:', error);
+                    // Обрабатываем ошибку
+                })
+                .finally(() => {
+                  this.clearClientMessage();
+                });
+          },
+
+          playScenario(scenarioSteps) {
+            this.scenarioMode = true;
+            this.scenarioSteps = scenarioSteps;
+            this.scenarioStep = 0;
+
+            this.handleScenarioStep();
+          },
+
+          handleScenarioButton(possibleAnswer) {
+            this.message = possibleAnswer;
+
+            this.handleScenarioStep();
+          },
+
+          handleScenarioStep() {
+            if (this.message.length > 0) {
+              this.pushSimpleMessage(this.message);
+            }
+            
+            const currentStep = this.scenarioSteps[this.scenarioStep];
+            if (currentStep.possible_answers && currentStep.possible_answers.length > 0) {
+              this.pushBigAnswerMessage(currentStep, 'buttons')
+            } else {
+              this.pushSimpleMessage(currentStep.question, 'app')
+            }
+
+            if (this.message.length > 0) {
+              this.scenarioAnswers.push({step: this.scenarioStep, answer: this.message})
+            }
+
+            if (this.scenarioStep === (this.scenarioSteps.length - 1)) {
+              this.finalizeScenario();
+            } else {
+              this.scenarioStep++;
+            }
+
+            this.clearClientMessage();
+          },
+
+          finalizeScenario() {
+            this.scenarioMode = false;
+            console.log('FINAL')
+          },
+
+          pushSimpleMessage(messageText, sender = 'client') {
+            switch (sender) {
+              case 'client':
+                this.messages.push({content: messageText, type: 'client'});
+                break;
+              case 'app':
+                this.messages.push({content: messageText, type: 'simple_answer'});
+                break;
+            }
+          },
+
+          pushBigAnswerMessage(content, type = 'links') {
+            this.messages.push({content: content, type: type});
+          },
+
+          clearClientMessage() {
+            this.message = '';
+          }
+        }
+    }).mount('#app');
+</script>
+{% endblock %}
