@@ -16,6 +16,8 @@ def message():
         result = 'Не удалось распознать Ваш запрос. Пожалуйста, перефразируйте и попробуйте еще раз'
     else:
         r_class = session.query(RequestClass).filter_by(alias=prediction_class).first()
+        session.commit()
+
         result = r_class.to_dto().to_json()
 
     return result
