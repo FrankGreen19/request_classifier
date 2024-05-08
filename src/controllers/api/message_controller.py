@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, Response
 from src.services.prediction_service import get_prediction
 from app_init import app
 from src.models.models import RequestClass, session
@@ -13,11 +13,10 @@ def message():
         prediction_class = None
 
     if prediction_class is None:
-        result = 'Не удалось распознать Ваш запрос. Пожалуйста, перефразируйте и попробуйте еще раз'
+        return {'text': 'Не удалось распознать Ваш запрос. Пожалуйста, перефразируйте и попробуйте еще раз'}, 400
     else:
         r_class = session.query(RequestClass).filter_by(alias=prediction_class).first()
-        session.commit()
-
+        session.rollback()
         result = r_class.to_dto().to_json()
 
-    return result
+    return result, 200

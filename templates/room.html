@@ -177,8 +177,15 @@
                     this.pushBigAnswerMessage(response.data)
                 })
                 .catch(error => {
-                    console.error('Произошла ошибка:', error);
-                    // Обрабатываем ошибку
+                  if (error.response.status < 500) {
+                    // Сервер вернул ошибку с кодом ответа, отличным от 2xx
+                    this.pushSimpleMessage(error.response.data.text, 'app')
+                    console.log('Произошла ошибка:', error);
+                  } else {
+                    this.pushSimpleMessage('Непредвиденная ошибка. Пожалуйста, попробуйте еще раз позднее', 'app')
+                    console.log('Произошла ошибка:', error);
+                  }
+
                 })
                 .finally(() => {
                   this.hideLoadingMessage();
@@ -216,7 +223,7 @@
               this.scenarioAnswers.push({step: this.scenarioStep, answer: this.message})
             }
 
-            if (this.scenarioStep === (this.scenarioSteps.length - 1)) {
+            if (this.scenarioStep === this.scenarioSteps.length) {
               this.finalizeScenario();
             } else {
               this.scenarioStep++;
