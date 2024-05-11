@@ -7,10 +7,6 @@ import ast
 # Создаем базовый класс для объявления моделей
 Base = declarative_base()
 
-engine = create_engine('mysql://root:root@localhost/request_classifier')
-Session = sessionmaker(bind=engine)
-session = Session()
-
 class RequestClass(Base):
     __tablename__ = 'request_classes'  # Имя таблицы в базе данных
 
