@@ -50,6 +50,7 @@ class RequestClass(Base):
             })
 
         return RequestClassDTO(
+            request_class_title=self.title,
             links=links,
             scenario_activation_question=self.scenario[0].activation_question,
             scenario_steps=scenario_steps
