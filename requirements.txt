@@ -1,8 +1,8 @@
 Flask==3.0.3
 Flask_Cors==4.0.0
+joblib==1.4.2
 keras==2.15.0
+scikit_learn==1.4.2
+SQLAlchemy==2.0.30
 tensorflow==2.15.0
 tensorflow_intel==2.15.0
-
-SQLAlchemy~=2.0.29
-alembic~=1.13.1
